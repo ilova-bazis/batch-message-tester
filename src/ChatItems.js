@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { ListGroup } from 'react-bootstrap';
+import { ListGroup, Spinner } from 'react-bootstrap';
 
 export default class ChatItems extends Component {
     constructor(props){
@@ -14,14 +14,21 @@ export default class ChatItems extends Component {
         this.props.selectChannels(ev, val);
         
     }
+
+    getUser(user){
+        // this.props.getUser();
+    }
+
     renderUserName(user){
         if(user.title !== undefined) {
             return user.title
         }
         else {
-            
+            this.getUser(user);
         }
+        return <Spinner variant="info" ></Spinner>
     }
+
     render() {
         return (
             <div>

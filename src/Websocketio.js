@@ -3,8 +3,9 @@ import React from 'react';
 import uuid from 'uuid/v4';
 // import util, {TextEncoder} from 'util';
 import * as util from 'text-encoding';
-import { Button, Spinner, Container } from 'react-bootstrap';
+import { Button, Spinner, Container, Row, Col } from 'react-bootstrap';
 import Chat from './Chat';
+import Sessions from './Sessions';
 // import './App.css';
 // import {startApplication} from './functions/ApplicationActions';
 // import {getPeople} from './functions/GetPeople';
@@ -23,6 +24,16 @@ const person = {
     "contacts": [],
     "device": [
         {
+
+            "_id": "5e58fe811cfe04ba056dc804",
+            "device_name": "Virginie.Grimes",
+            "device_id": "364f1084-0c03-490d-b8ed-56fe8202012c",
+            "platform": "ios",
+            "app_version": "v2.2.4 (2)",
+            "ip": "95.63.28.188",
+            "api_key": "4f54b7c3-2431-4ac1-807f-c5acd4ec1ed3",
+            "__v": 0,
+            "session_id": "48072383-dea9-438c-afab-f948a8953191"
             // "_id": "5dff12951e80a835c1fcc35a",
             // "device_name": "Winfield_Nicolas60",
             // "device_id": "054f38a4-bf95-4c3c-808a-c626cb2c9e40",
@@ -47,15 +58,15 @@ const person = {
             // platform: "macOS",
             // session_id: "a2e7854d-55de-4922-ae62-cbd6d68b98d7",
             // END OF NABI
-            "_id": "5dff12951e80a835c1fcc35a",
-            "device_name": "Winfield_Nicolas60",
-            "device_id": "054f38a4-bf95-4c3c-808a-c626cb2c9e40",
-            "platform": "ios",
-            "app_version": "v2.2.4 (2)",
-            "ip": "232.16.48.125",
-            "api_key": "4f54b7c3-2431-4ac1-807f-c5acd4ec1ed3",
-            "__v": 0,
-            "session_id": "470d3b0d-c40d-4f53-b27a-651ffbdd6e81"
+            // "_id": "5dff12951e80a835c1fcc35a",
+            // "device_name": "Winfield_Nicolas60",
+            // "device_id": "054f38a4-bf95-4c3c-808a-c626cb2c9e40",
+            // "platform": "ios",
+            // "app_version": "v2.2.4 (2)",
+            // "ip": "232.16.48.125",
+            // "api_key": "4f54b7c3-2431-4ac1-807f-c5acd4ec1ed3",
+            // "__v": 0,
+            // "session_id": "470d3b0d-c40d-4f53-b27a-651ffbdd6e81"
         }
     ],
     "accountList": [],
@@ -82,18 +93,49 @@ export default class WebSocketio extends React.Component {
             person: person,
             requests: {},
             anchorEl: null,
+            presence: [],
+            profile: {
+                presence: {
+                    status: "",
+                    state: "",
+                    emoji: "",
+                    lastChange: 0.0
+                }
+            }
         }
-
-       
        
         this.disconnectWS = this.disconnectWS.bind(this);
         this.setWebSocketRules = this.setWebSocketRules.bind(this);
-
-
+        this.setPerson = this.setPerson.bind(this);
     }
     // const [reply, setReply] = React.useState([]);
     // const [ws, setWs] = React.useState(null);
     // let ws = null;
+
+    componentDidMount(){
+        fetch('http://localhost:3030/nats/person')
+        .then((response) => {
+            return response.json();
+        })
+        .then((data) => {
+            this.setState({people: data.persons.filter(val=>val.account_id !== undefined)})
+        });
+
+    }
+    loadPeople(){
+
+    }
+
+    setProfile(p){
+        this.setState({
+            profile: p
+        })
+    }
+
+    setPerson(person){
+        this.setState({person: person});
+    }
+
 
     async onMessage(e){
         // console.log(temp);
@@ -104,6 +146,11 @@ export default class WebSocketio extends React.Component {
                 // this.state.requests[e.id.toLowerCase()](e, this.state.person, this.state.specs).then(data=>{
                 //     this.setState({specs:{...this.state.specs, ...data}});
                 // });
+                if (e.method === "user.presence.notification") {
+                    let presence = this.state.presence;
+                    presence.push(e.params.presence);
+                    this.setState({presence: presence});
+                }
                 this.state.requests[e.id.toLowerCase()](e).then(data=>{
                     // this.setState({specs:{...this.state.specs, ...data}});
                     console.log(data);
@@ -117,13 +164,6 @@ export default class WebSocketio extends React.Component {
         }
         temp.unshift(e);
         this.setState({reply:[...temp], requests: reqs});
-    }
-
-    componentDidMount() {
-        // getPeople().then(response=>{
-        //     // console.log(response.data.persons.filter(val=>val.device[0].session_id !== undefined));
-        //     this.setState({people: response.data.persons.filter(val=>val.device[0].session_id !== undefined)});
-        // }).catch(err=>console.log(err));
     }
     
     disconnectWS() {
@@ -195,6 +235,7 @@ export default class WebSocketio extends React.Component {
         temp.onclose = (e)=> this.wsDisconnected(e);
     
         const sendHeaders = (data) => {
+            console.log('ss');
             temp.send(this.converter({
                 version: 3,
                 id: uuid(),
@@ -269,7 +310,7 @@ export default class WebSocketio extends React.Component {
     // [anchorEl, setAnchorEl] = React.useState(null);
 
     renderChat(ws){
-        return (ws.readyState === 1 ? <div><Chat sendWS={this.sendWS} conversations={this.state.conversations}></Chat></div> : <div></div>);
+        return (ws.readyState === 1 ? <div><Chat sendWS={this.sendWS} profile={this.state.profile} presence={this.state.presence} accountIDs={this.state.people.map(val=>val.account_id)} conversations={this.state.conversations}></Chat></div> : <div></div>);
     }
 
     // console.log(ws);
@@ -277,17 +318,22 @@ export default class WebSocketio extends React.Component {
         // console.log(this.state);
         return (<>
             <Container>
-                <div>
-                    <p>Select session:</p>
+
+                <Row>
+                    <Col>
+                    
                     {/* <Select onChange={this.setWebSocketRules}>
                         { this.state.people === null ? <MenuItem>No Sessions</MenuItem> : this.state.people.map(val=>(<MenuItem value={val._id}>{val.lastName + " " + val.firstName}</MenuItem>)) }
                     </Select> */}
+                    <p></p>
+                    <Sessions person={this.state.person} setPerson={this.setPerson} people={this.state.people}></Sessions>
                     <h3 variant='h6'>WebSocket Status: { this.state.ws ? wsState[this.state.ws.readyState] :<span className="dotRed"></span>}</h3>
                     {/* <Button></Button> */}
                     <Button variant="success"  disabled={ this.state.ws !== null } onClick={this.connectWS}>Connect</Button>
                     <Button variant="danger" disabled={ this.state.ws === null } onClick={this.disconnectWS}>Disconnect</Button>
                     {/* <button variant='contained' onClick={this.clearLog}>Clear Log</button> */}
-                </div>
+                    </Col>
+                </Row>
                 <hr></hr>
                 { this.state.ws ? this.renderChat(this.state.ws): ""}
             </Container>

@@ -1,0 +1,10 @@
+ 
+@ID() var id: UUID?
+@Field(key: "username") var username: String?
+@Field(key: "firstname") var firstname: String?
+@Field(key: "lastname") var lastname: String?
+@Field(key: "avatar_content_uuid") var avatar_content_uuid: UUID?
+@Field(key: "system_id") var system_id: Int
+@Field(key: "settings_id") var settings_id: Int
+@Field(key: "status") var status: AccountStatus
+@Field(key: "last_change") var last_change: Double
